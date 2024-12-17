@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import animation
 from sklearn.neural_network import MLPRegressor
 import joblib
 from environments.car_hill import CarHillEnvironment
@@ -218,14 +217,16 @@ if __name__ == "__main__":
         4. Save the trained model
     """
     env_name = sys.argv[1]
+    nb_episodes = int(sys.argv[2])
+
     if env_name == "car":
         env = CarHillEnvironment()
     elif env_name == "pendulum":
         env = PendulumEnvironment()
     agent = NFQAgent(env, gamma=0.99, hidden_layers=(5,5), max_iter=200, lr=0.001) #small architecture
-    agent.train(iterations=100, episodes_per_iter=200, eval_episodes=10)
+    agent.train(iterations=nb_episodes, episodes_per_iter=200, eval_episodes=10)
     returns = agent.evaluate_policy(num_episodes=10)
     print("Final policy evaluation:")
     print("Mean return:", np.mean(returns), "Std:", np.std(returns))
     agent.plot_training()
-    agent.save_model(f"./models/nfq_{env_name}_{sys.argv[2]}.pkl")
+    agent.save_model(f"./models/nfq_{env_name}_model_{nb_episodes}_ep.pkl")

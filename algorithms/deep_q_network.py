@@ -139,7 +139,7 @@ class DQNAgent:
 
 if __name__ == "__main__":
     env_name = sys.argv[1]
-    model_name = sys.argv[2]
+    nb_episodes = sys.argv[2]
 
     if env_name == "car":
         env = CarHillEnvironment()
@@ -149,5 +149,5 @@ if __name__ == "__main__":
         raise ValueError("Unknown environment")
 
     agent = DQNAgent(env, gamma=0.99, lr=0.001, hidden_layers=(5,5), batch_size=64)
-    agent.train(episodes=100, max_steps=200)
-    agent.save_model(f"./models/dqn_{env_name}_{model_name}.pth")
+    agent.train(episodes=nb_episodes, max_steps=200)
+    agent.save_model(f"./models/dqn_{env_name}_{nb_episodes}_ep.pth")

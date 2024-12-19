@@ -9,7 +9,7 @@ class PendulumEnvironment:
         self.g_force = 9.81
         self.friction = 0.01
         self.delta_t = 0.01
-        self.max_steps = 2000
+        self.max_steps = 10000
         self.actions = [-5, 0, 5]
         self.reset()
         self.state_dim = 2

@@ -15,7 +15,7 @@ from tqdm import tqdm, trange
 """
 
 class DQNAgent:
-    def __init__(self, env, gamma=0.99, lr=0.001, hidden_layers=(64, 64), batch_size=64, buffer_capacity=100000, target_update_freq=10):
+    def __init__(self, env, gamma=0.99, lr=0.001, hidden_layers=(64, 64), batch_size=64, buffer_capacity=1000000, target_update_freq=5):
         self.env = env
         self.state_dim = env.state_dim
         self.action_dim = len(env.actions)
@@ -50,7 +50,9 @@ class DQNAgent:
             return random.choice(self.actions)  # Explore
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         q_values = self.q_network(state)
-        return self.actions[torch.argmax(q_values).item()]  # Exploit
+        action_index = torch.argmax(q_values).item()
+        return self.actions[action_index]  # Map index back to action
+
 
     def update(self):
         if len(self.replay_buffer) < self.batch_size:
@@ -60,6 +62,7 @@ class DQNAgent:
         minibatch = self.replay_buffer.sample(self.batch_size)
         states, actions, rewards, next_states, dones = zip(*minibatch)
         states = torch.FloatTensor(np.array(states)).to(self.device)
+        actions = [self.actions.index(a) for a in actions]  # Map actions to indices
         actions = torch.LongTensor(actions).unsqueeze(1).to(self.device)
         rewards = torch.FloatTensor(rewards).unsqueeze(1).to(self.device)
         next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
@@ -81,7 +84,7 @@ class DQNAgent:
         self.optimizer.step()
         self.loss_log.append(loss.item())
 
-    def train(self, episodes=500, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.9995, max_steps=200):
+    def train(self, episodes=500, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.9995, max_steps=5000):
         epsilon = epsilon_start
         t = trange(episodes, desc="Training", leave=True)
         for episode in tqdm(range(episodes)):
@@ -133,13 +136,13 @@ class DQNAgent:
         torch.save(self.q_network.state_dict(), path)
 
     def load_model(self, path):
-        self.q_network.load_state_dict(torch.load(path))
+        self.q_network.load_state_dict(torch.load(path, weights_only=True))
         self.target_network.load_state_dict(self.q_network.state_dict())
 
 
 if __name__ == "__main__":
     env_name = sys.argv[1]
-    nb_episodes = sys.argv[2]
+    nb_episodes = int(sys.argv[2])
 
     if env_name == "car":
         env = CarHillEnvironment()
@@ -149,5 +152,5 @@ if __name__ == "__main__":
         raise ValueError("Unknown environment")
 
     agent = DQNAgent(env, gamma=0.99, lr=0.001, hidden_layers=(5,5), batch_size=64)
-    agent.train(episodes=nb_episodes, max_steps=200)
+    agent.train(episodes=nb_episodes, max_steps=env.max_steps)
     agent.save_model(f"./models/dqn_{env_name}_{nb_episodes}_ep.pth")

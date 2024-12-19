@@ -59,8 +59,9 @@ class NFQAgentWrapper:
             elif self.model_type == "pth":
                 state_tensor = torch.FloatTensor(state).unsqueeze(0)
                 with torch.no_grad():
-                    print(f"index | action : {self.actions.index(action)}|{action}")
-                    q_values.append(self.model(state_tensor).squeeze().numpy()[action])
+                    # print(f"index | action : {self.actions.index(action)}|{action}")
+                    action_index = self.actions.index(action)  # Map action to index
+                    q_values.append(self.model(state_tensor).squeeze().numpy()[action_index])        
         return self.actions[np.argmax(q_values)]
 
 

@@ -5,6 +5,7 @@ import joblib
 from environments.car_hill import CarHillEnvironment
 from environments.inverted_pendulus import PendulumEnvironment
 import sys
+import time 
 
 """THIS IS AN OFFLINE ALGORITHM
 
@@ -224,9 +225,10 @@ if __name__ == "__main__":
     elif env_name == "pendulum":
         env = PendulumEnvironment()
     agent = NFQAgent(env, gamma=0.99, hidden_layers=(5,5), max_iter=200, lr=0.001) #small architecture
-    agent.train(iterations=nb_episodes, episodes_per_iter=200, eval_episodes=10)
+    start_time = time.time()
+    agent.train(iterations=nb_episodes, episodes_per_iter=env.max_steps, eval_episodes=10)
+    end_time = time.time()
     returns = agent.evaluate_policy(num_episodes=10)
-    print("Final policy evaluation:")
-    print("Mean return:", np.mean(returns), "Std:", np.std(returns))
+    print("Time of inference :", (end_time-start_time))
     agent.plot_training()
     agent.save_model(f"./models/nfq_{env_name}_model_{nb_episodes}_ep.pkl")

@@ -41,7 +41,7 @@ The key points to remember from this repository :
 
 ## The root
 
-At the root of the repository, you will find two python scripts `simulation_car.py`. This script simulates the an environment with a specific model, for a certain amount of time. (e.g. `python simulation_environment.py <env_name> <model_name> <simulation_time>`).
+At the root of the repository, you will find a python script `simulation_environment.py`. This script simulates an environment with a specific model, for a certain amount of time. (e.g. `python simulation_environment.py <env_name> <model_name> <simulation_time>`).
 
 - For the car simulation : 
     - it ends once the car has gotten a positive result

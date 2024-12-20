@@ -27,6 +27,13 @@ class CarHillEnvironment:
         self.velocity = self.prng.uniform(-0.07, 0.07)
         self.steps = 0
         return np.array([self.position, self.velocity])
+    
+    def is_successful(self, state):
+        position, _ = state
+        return position >= self.goal_position
+    
+    def compute_energy_efficiency(self, actions):
+        return sum(abs(action) for action in actions) / len(actions)  # Penalize large actions
 
     def step(self, action):
         """
@@ -61,7 +68,7 @@ class CarHillEnvironment:
 
         done = self.steps >= self.max_steps
         if self.position >= self.goal_position:
-            reward = 1000000 
+            reward = 1000
         else:
             reward = -1
         return np.array([self.position, self.velocity]), reward, done

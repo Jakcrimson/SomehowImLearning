@@ -13,6 +13,7 @@ class PendulumEnvironment:
         self.actions = [-5, 0, 5]
         self.reset()
         self.state_dim = 2
+        self.angular_history = []
     
     def reset(self):
         """
@@ -29,6 +30,12 @@ class PendulumEnvironment:
         self.steps = 0
         return np.array([self.angular_position, self.angular_velocity])
 
+    def compute_angle_deviation(self):
+        return np.mean(abs(self.angular_position))  # Track angle deviation over time
+
+    def is_successful(self, state):
+        angle, _ = state
+        return abs(angle) < 0.1  # Consider upright if deviation is small
 
     def step(self, action):
         """
@@ -60,4 +67,5 @@ class PendulumEnvironment:
         elif self.angular_position > math.pi:
             self.angular_position = self.angular_position-2*math.pi
         reward = np.cos(self.angular_position)
+        self.angular_history.append(self.angular_position)
         return np.array([self.angular_position, self.angular_velocity]), reward, done

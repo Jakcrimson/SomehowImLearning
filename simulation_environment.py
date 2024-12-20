@@ -130,7 +130,7 @@ class PendulumVisualizationWithMetrics:
         ax_circle.set_title("Pendulum Visualization")
 
         # Rewards plot
-        ax_rewards.set_title("Cumulative Rewards")
+        ax_rewards.set_title(f"Cumulative Rewards : {np.sum(rewards)}")
         ax_rewards.set_xlim(0, len(rewards))
         ax_rewards.set_ylim(min(rewards) - 10, max(rewards) + 10)
         rewards_line, = ax_rewards.plot([], [], color='blue', label='Rewards')
@@ -290,8 +290,6 @@ class CarVisualization :
         plt.show()
 
 if __name__ == "__main__":
-
-
     env_name = sys.argv[1]
     model_name = sys.argv[2]
     simulation_time = int(sys.argv[3])

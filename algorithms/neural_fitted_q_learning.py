@@ -6,6 +6,7 @@ from environments.car_hill import CarHillEnvironment
 from environments.inverted_pendulus import PendulumEnvironment
 import sys
 import time 
+import seaborn as sns
 
 """THIS IS AN OFFLINE ALGORITHM
 
@@ -27,7 +28,9 @@ class NFQAgent:
         self.model.fit(dummy_X, dummy_y)
 
         # Logs
-        self.rewards_log = []
+        self.metrics = {
+            "cumulative_reward": [],
+        }
         
     def Q(self, state, action):
         """
@@ -139,10 +142,11 @@ class NFQAgent:
             visualize_interval (int, optional): Interval for visualization. Defaults to 5
         """
         data = self.collect_data(policy='random', num_episodes=episodes_per_iter)
-
+        
         for i in range(iterations):
             self.update_Q(data)
             returns = self.evaluate_policy(num_episodes=eval_episodes)
+            self.metrics["cumulative_reward"].append(np.mean(returns))
             print(f"Iteration {i+1}/{iterations}, Return (mean over {eval_episodes} episodes): {np.mean(returns):.2f}")
             new_data = self.collect_data(policy='greedy', num_episodes=episodes_per_iter)
             data = data + new_data
@@ -171,21 +175,26 @@ class NFQAgent:
                     break
             returns.append(total_reward)
 
-        self.rewards_log = returns   
-        return returns
+        return returns    
     
-    
-    def plot_training(self):
-        plt.figure(figsize=(12, 5))
+    def plot_training(self, env_name, nb_ep):
+        sns.set_theme(style="whitegrid")  # Set a professional theme
+        fig, (ax1) = plt.subplots(1, 1, figsize=(14, 10))  # Create 2x2 subplots
+        fig.suptitle(f"Training Metrics for {env_name} | Mean Cumulative Reward {np.mean(self.metrics['cumulative_reward'])}", fontsize=16, fontweight='bold')
 
-        plt.subplot(1, 1, 1)
-        plt.plot(self.rewards_log, label="Total Reward")
-        plt.xlabel("Episode")
-        plt.ylabel("Reward")
-        plt.title("Training Rewards")
-        plt.legend()
-        plt.savefig(f"./results/nfq_training_{sys.argv[1]}_{sys.argv[2]}.png")
+        # Plot Cumulative Reward
+        ax1.plot(self.metrics["cumulative_reward"], label="Cumulative Reward", color="#4C72B0", linewidth=2)
+        ax1.set_title("Cumulative Reward", fontsize=14)
+        ax1.set_xlabel("Iteration", fontsize=12)
+        ax1.set_ylabel("Reward", fontsize=12)
+        ax1.legend(fontsize=10)
+        ax1.grid(alpha=0.5)
+
+        plt.tight_layout(rect=[0, 0, 1, 0.95])  # Leave space for suptitle
+        save_path = f"./results/{env_name}_{nb_ep}_ep_metrics_plot.png"
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')  # Save as high-res image
         plt.show()
+        print(f"Metric plot saved to {save_path}")
 
     def save_model(self, model_path):
         """
@@ -224,11 +233,16 @@ if __name__ == "__main__":
         env = CarHillEnvironment()
     elif env_name == "pendulum":
         env = PendulumEnvironment()
-    agent = NFQAgent(env, gamma=0.99, hidden_layers=(5,5), max_iter=200, lr=0.001) #small architecture
+    else:
+        raise ValueError("Unknown environment")
+
+    agent = NFQAgent(env, gamma=0.99, hidden_layers=(5,5), max_iter=200, lr=0.001) 
     start_time = time.time()
     agent.train(iterations=nb_episodes, episodes_per_iter=env.max_steps, eval_episodes=10)
     end_time = time.time()
+
     returns = agent.evaluate_policy(num_episodes=10)
-    print("Time of inference :", (end_time-start_time))
-    agent.plot_training()
+    print("Time of inference :", (end_time - start_time))
+
     agent.save_model(f"./models/nfq_{env_name}_model_{nb_episodes}_ep.pkl")
+    agent.plot_training(env_name=env_name, nb_ep=nb_episodes)

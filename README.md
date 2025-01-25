@@ -11,7 +11,7 @@
                                                                                                              __/ | 
                                                                                                              |___/  
 
-@AUTHORS : Pierre LAGUE & François MULLER
+@AUTHORS : Pierre LAGUE
 @ESTABLISHMENT : University of Lille, France
 ```
 

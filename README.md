@@ -37,7 +37,7 @@ The key points to remember from this repository :
 A **Markovian Decision Problem (MDP)** is a mathematical framework used to model decision-making in situations where outcomes are partly random and partly under the control of an agent. An MDP is defined by:
 - **States (S):** A set of all possible states the environment can be in.
 - **Actions (A):** A set of actions the agent can take.
-- **Transition Function (P):** The probability $ P(s' | s, a) $ of transitioning from state $ s $ to $ s' $ after taking action $ a $.
+- **Transition Function (P):** The probability $P(s' | s, a)$ of transitioning from state $s$ to $s'$ after taking action $ a $.
 - **Reward Function (R):** A function $ R(s, a, s') $ that provides the reward for transitioning from $ s $ to $ s' $ via $ a $.
 - **Discount Factor ($\gamma$):** A value in $[0, 1]$ that prioritizes immediate rewards over future rewards.
 

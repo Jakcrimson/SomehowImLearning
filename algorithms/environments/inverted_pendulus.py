@@ -9,7 +9,7 @@ class PendulumEnvironment:
         self.g_force = 9.81
         self.friction = 0.01
         self.delta_t = 0.01
-        self.max_steps = 10000
+        self.max_steps = 500000
         self.actions = [-5, 0, 5]
         self.reset()
         self.state_dim = 2
@@ -35,7 +35,7 @@ class PendulumEnvironment:
 
     def is_successful(self, state):
         angle, _ = state
-        return abs(angle) < 0.1  # Consider upright if deviation is small
+        return abs(angle) < 0.05  # Consider upright if deviation is small
 
     def step(self, action):
         """

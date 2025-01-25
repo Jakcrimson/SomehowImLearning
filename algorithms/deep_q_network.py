@@ -155,7 +155,7 @@ class DQNAgent:
 
         # Adjust layout
         plt.tight_layout(rect=[0, 0, 1, 0.95])  # Leave space for suptitle
-        save_path = f"./results/{env_name}_{nb_ep}_ep_metrics_plot.png"
+        save_path = f"./results/dqn_{env_name}_{nb_ep}_ep_metrics_plot.png"
         plt.savefig(save_path, dpi=300, bbox_inches='tight')  # Save as high-res image
         plt.show()
         print(f"Metric plot saved to {save_path}")

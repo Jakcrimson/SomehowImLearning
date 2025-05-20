@@ -7,9 +7,9 @@ class CarHillEnvironment:
         self.min_velocity = -0.07
         self.max_velocity = 0.07
         self.goal_position = 0.5
-        self.max_steps = 200 
+        self.max_steps = 50 
         self.prng = np.random.default_rng(123456)
-        self.actions = [-1, 0, 1]
+        self.actions = [-0.1, 0, 0.1]
         self.reset()
         self.state_dim = 2
 

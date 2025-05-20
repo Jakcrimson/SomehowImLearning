@@ -50,7 +50,8 @@ class REINFORCEAgent:
         # Metrics dict
         self.metrics = {
             "cumulative_reward": [],
-            "loss": []
+            "loss": [],
+            "actions": []
         }
 
     def select_action(self, state):
@@ -58,7 +59,13 @@ class REINFORCEAgent:
         action_probs = self.policy_network(state)
         action = np.random.choice(self.actions, p=action_probs.cpu().detach().numpy().flatten())
         return action
-
+    
+    def greedy_action(self, state):
+        state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+        action_probs = self.policy_network(state)
+        action = np.argmax(action_probs)
+        return action
+    
     def compute_returns(self, rewards):
         """Compute discounted rewards (returns) for an episode."""
         returns = []
@@ -82,30 +89,34 @@ class REINFORCEAgent:
         loss = -(log_action_probs * returns).mean()
 
         # Optimize the policy network
+        torch.nn.utils.clip_grad_norm_(
+                self.policy_network.parameters(), max_norm=0.5
+        )
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
         self.metrics["loss"].append(loss.item())
 
-    def train(self, episodes=500, max_steps=5000):
+    def train(self, episodes=500, max_steps=10):
+        max_steps_per_episode = getattr(self.env, 'max_steps', max_steps) 
+
         t = trange(episodes, desc="Training", leave=True)
         cumulative_reward = 0
+        cummulative_actions = 0
         for episode in t:
             state = self.env.reset()
             episode_states = []
             episode_actions = []
             episode_rewards = []
 
-            for step in range(max_steps):
+            for step_in_episode_loop in range(max_steps_per_episode):
                 action = self.select_action(state)
                 next_state, reward, done = self.env.step(action)
                 episode_states.append(state)
                 episode_actions.append(action)
                 episode_rewards.append(reward)
                 state = next_state
-                if isinstance(self.env, PendulumEnvironment):
-                    done = self.gamma**self.env.steps > 1e-4
                 if done:
                     break
 
@@ -115,13 +126,15 @@ class REINFORCEAgent:
 
             # Log metrics
             cumulative_reward += sum(episode_rewards)
+            cummulative_actions += sum(episode_actions)
             self.metrics['cumulative_reward'].append(cumulative_reward)
+            self.metrics['actions'].append(cummulative_actions)
             t.set_description(f"Episode {episode+1}: Reward: {cumulative_reward:.3f}")
             t.update()
 
     def plot_training(self, env_name, nb_ep):
         sns.set_theme(style="whitegrid")
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 10))
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(14, 10))
         fig.suptitle(f"Training Metrics for {env_name} | Mean Cumulative Reward {np.mean(self.metrics['cumulative_reward']):.2f}", fontsize=16, fontweight='bold')
 
         # Plot Cumulative Reward
@@ -139,6 +152,13 @@ class REINFORCEAgent:
         ax2.set_ylabel("Loss", fontsize=12)
         ax2.legend(fontsize=10)
         ax2.grid(alpha=0.5)
+
+        ax3.plot(self.metrics["actions"], label="Actions", color="#8172B6", linewidth=2)
+        ax3.set_title("Actions", fontsize=14)
+        ax3.set_xlabel("Episode", fontsize=12)
+        ax3.set_ylabel("Actions", fontsize=12)
+        ax3.legend(fontsize=10)
+        ax3.grid(alpha=0.5)
 
         # Adjust layout
         plt.tight_layout(rect=[0, 0, 1, 0.95])
@@ -175,7 +195,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("Unknown environment")
 
-    agent = REINFORCEAgent(env, gamma=0.99, lr=0.001, hidden_layers=(64, 64))
+    agent = REINFORCEAgent(env, gamma=0.99, lr=0.0005, hidden_layers=(64, 64))
     agent.train(episodes=nb_episodes, max_steps=env.max_steps)
     agent.save_model(f"./models/reinforce_{env_name}_{nb_episodes}_ep.pth")
     agent.plot_training(env_name=env_name, nb_ep=nb_episodes)

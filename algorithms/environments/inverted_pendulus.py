@@ -1,71 +1,84 @@
 import numpy as np
-prng = np.random.default_rng(1234567)
 import math
 
+# It's good practice to have a single, configurable prng
+# If you run this script multiple times, this global prng will continue its sequence
+# unless re-initialized. For full reproducibility in experiments, pass a seed to the env.
+# global_prng = np.random.default_rng(1234567)
+
 class PendulumEnvironment:
-    def __init__(self):
+    def __init__(self, seed=None): # Allow passing a seed for prng
         self.mass = 1
         self.length = 1
         self.g_force = 9.81
         self.friction = 0.01
         self.delta_t = 0.01
-        self.max_steps = 500000
-        self.actions = [-5, 0, 5]
-        self.reset()
+        self.max_steps = 500
+        self.actions = [-5, 0, 5]  
         self.state_dim = 2
-        self.angular_history = []
-    
-    def reset(self):
-        """
-        Reset the environment to initial state.
+        
+        if seed is not None:
+            self.prng = np.random.default_rng(seed)
+        else:
+            self.prng = np.random.default_rng()
 
-        Initializes the pendulums's position uniformly between -pi and pi,
-        and velocity uniformly between -9 and 9.
-
-        Returns:
-            numpy.ndarray: Initial state as [angular_position, angular_velocity]
-        """
-        self.angular_position = prng.uniform(-np.pi, np.pi)
-        self.angular_velocity = prng.uniform(-9, 9)
+        self.angular_position = 0.0 # Initialize attributes before reset is called
+        self.angular_velocity = 0.0
         self.steps = 0
+        self.angular_history = []
+        self.reset()
+
+
+    def reset(self):
+        self.angular_position = self.prng.uniform(-np.pi, np.pi)
+        self.angular_velocity = self.prng.uniform(-9, 9)
+        self.steps = 0
+        self.angular_history = []  # Reset history on new episode
         return np.array([self.angular_position, self.angular_velocity])
 
     def compute_angle_deviation(self):
-        return np.mean(abs(self.angular_position))  # Track angle deviation over time
+        # This computes the mean absolute angle over the *current* episode's history
+        return np.mean(np.abs(self.angular_history)) if self.angular_history else 0.0
 
-    def is_successful(self, state):
-        angle, _ = state
-        return abs(angle) < 0.05  # Consider upright if deviation is small
+    def is_successful(self, state_tuple=None):
+        # Checks if the current or a given state is "successful" (upright)
+        angle = state_tuple[0] if state_tuple is not None else self.angular_position
+        return abs(angle) < 0.05
 
     def step(self, action):
-        """
-        Simulate one step in the environment.
+        # Ensure action is one of the allowed values.
+        if action not in self.actions:
+            print(f"Warning: Action {action} not in allowed actions {self.actions}. Behavior undefined.")
+            # Decide how to handle: error, clamp, or assume agent is correct.
+            # For now, we assume the agent provides a valid action from self.actions.
 
-        Updates the pendulum's angular_position and angular_velocity based on the chosen action
-        and environmental physics including gravity, friction, lenght and mass.
+        self.steps += 1
 
-        Args:
-            action (int): Chosen action from {-5, 0, 5}
-                -5: Rotate left
-                0: No rotation
-                5: Rotate right
+        # Dynamics calculation
+        # a = angular acceleration
+        torque = action # Action is the direct torque
+        angular_acceleration = (1 / (self.mass * self.length**2)) * \
+            (-self.friction * self.angular_velocity +
+             (self.mass * self.g_force * self.length) * np.sin(self.angular_position) +
+             torque)
 
-        Returns:
-            tuple:
-                - numpy.ndarray: Next state as [position, velocity]
-                - float: Reward (cos(angular_position), if balanced, then the reward is 1)
-                - bool: if the episode is terminated
+        self.angular_velocity = self.angular_velocity + angular_acceleration * self.delta_t
+        # Optional: Clip angular velocity if it can grow too large, e.g.:
+        # max_angular_velocity = 15 # Example limit
+        # self.angular_velocity = np.clip(self.angular_velocity, -max_angular_velocity, max_angular_velocity)
 
-        """
-        done = False
-        self.steps+=1
-        a = (1/self.mass*self.length**2) * (-self.friction*self.angular_velocity + (self.mass*self.g_force*self.length)*np.sin(self.angular_position) + action)
-        self.angular_velocity  = self.angular_velocity + a * self.delta_t
         self.angular_position = self.angular_position + self.angular_velocity * self.delta_t
-        if self.angular_position < -math.pi:
-            self.angular_position = self.angular_position+2*math.pi
-        elif self.angular_position > math.pi:
-            self.angular_position = self.angular_position-2*math.pi
+
+        # Normalize angular_position to be within [-pi, pi]
+        # (x + pi) % (2*pi) - pi is a robust way to wrap to [-pi, pi]
+        self.angular_position = (self.angular_position + np.pi) % (2 * np.pi) - np.pi
+
         reward = np.cos(self.angular_position)
         self.angular_history.append(self.angular_position)
+
+        # Termination condition: episode ends if max_steps is reached
+        done = False
+        if self.steps >= self.max_steps:
+            done = True
+
         return np.array([self.angular_position, self.angular_velocity]), reward, done

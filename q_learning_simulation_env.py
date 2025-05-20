@@ -63,6 +63,12 @@ class NFQAgentWrapper:
                     action_index = self.actions.index(action)  # Map action to index
                     q_values.append(self.model(state_tensor).squeeze().numpy()[action_index])        
         return self.actions[np.argmax(q_values)]
+    
+    def select_action(self, state):
+        state = torch.FloatTensor(state).unsqueeze(0)
+        action_probs = self.policy_network(state)
+        action = np.random.choice(self.actions, p=action_probs.numpy().flatten())
+        return action
 
 class PendulumVisualizationWithMetrics:
     def __init__(self, agent, env, simulation_time=500):
@@ -211,9 +217,9 @@ class CarVisualization :
         state = self.env.reset()
         trajectory = {"positions": [], "velocities": [], "rewards": []}
 
-        for ep in range(simulation_time):
+        for ep in range(self.simulation_time):
             action = self.agent.greedy_action(state)
-            next_state, reward, done = env.step(action)
+            next_state, reward, done = self.env.step(action)
             trajectory["positions"].append(state[0])
             trajectory["velocities"].append(state[1])
             trajectory["rewards"].append(reward)
@@ -233,23 +239,23 @@ class CarVisualization :
         ax_velocity = axs[1, 0]
         ax_reward = axs[1, 1]
 
-        ax_car.set_xlim(env.min_position, env.max_position)
+        ax_car.set_xlim(self.env.min_position, self.env.max_position)
         ax_car.set_ylim(-1.5, 1.5)
         car_line, = ax_car.plot([], [], 'ro', markersize=10)
         hill_line, = ax_car.plot([], [], 'b-', lw=2)
         ax_car.set_title("Car on the Hill")
 
-        ax_position.set_xlim(0, simulation_time)
-        ax_position.set_ylim(env.min_position, env.max_position)
+        ax_position.set_xlim(0, self.simulation_time)
+        ax_position.set_ylim(self.env.min_position, self.env.max_position)
         position_line, = ax_position.plot([], [], label="Position")
         ax_position.legend()
 
-        ax_velocity.set_xlim(0, simulation_time)
-        ax_velocity.set_ylim(env.min_velocity, env.max_velocity)
+        ax_velocity.set_xlim(0, self.simulation_time)
+        ax_velocity.set_ylim(self.env.min_velocity, self.env.max_velocity)
         velocity_line, = ax_velocity.plot([], [], label="Velocity")
         ax_velocity.legend()
 
-        ax_reward.set_xlim(0, simulation_time)
+        ax_reward.set_xlim(0, self.simulation_time)
         ax_reward.set_ylim(-1, 10000)
         reward_line, = ax_reward.plot([], [], label="Reward")
         ax_reward.legend()
@@ -259,7 +265,7 @@ class CarVisualization :
 
         def init():
             car_line.set_data([], [])
-            hill_x = np.linspace(env.min_position, env.max_position, 500)
+            hill_x = np.linspace(self.env.min_position, self.env.max_position, 500)
             hill_y = hill_function(hill_x)
             hill_line.set_data(hill_x, hill_y)
             position_line.set_data([], [])
@@ -282,7 +288,7 @@ class CarVisualization :
             return car_line, position_line, velocity_line, reward_line
 
         ani = animation.FuncAnimation(
-            fig, update, frames=simulation_time, init_func=init, blit=True, interval=1
+            fig, update, frames=self.simulation_time, init_func=init, blit=True, interval=1
         )
         plt.tight_layout()
         plt.show()
@@ -293,6 +299,7 @@ if __name__ == "__main__":
     simulation_time = int(sys.argv[3])
 
     model_path = f"./models/{model_name}"
+    print("MODEL:", model_path)
     if env_name == "car":
         env = CarHillEnvironment()
         agent = NFQAgentWrapper(model_path, env)

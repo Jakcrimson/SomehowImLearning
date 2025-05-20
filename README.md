@@ -11,7 +11,7 @@
                                                                                                              __/ | 
                                                                                                              |___/  
 
-@AUTHORS : Pierre LAGUE & François MULLER
+@AUTHOR : Pierre LAGUE
 @ESTABLISHMENT : University of Lille, France
 ```
 
@@ -37,11 +37,11 @@ The key points to remember from this repository :
 A **Markovian Decision Problem (MDP)** is a mathematical framework used to model decision-making in situations where outcomes are partly random and partly under the control of an agent. An MDP is defined by:
 - **States (S):** A set of all possible states the environment can be in.
 - **Actions (A):** A set of actions the agent can take.
-- **Transition Function (P):** The probability $ P(s' | s, a) $ of transitioning from state $ s $ to $ s' $ after taking action $ a $.
-- **Reward Function (R):** A function $ R(s, a, s') $ that provides the reward for transitioning from $ s $ to $ s' $ via $ a $.
+- **Transition Function (P):** The probability $P(s' | s, a)$ of transitioning from state $s$ to $s'$ after taking action $a$.
+- **Reward Function (R):** A function $R(s, a, s')$ that provides the reward for transitioning from $s$ to $s'$ via $a$.
 - **Discount Factor ($\gamma$):** A value in $[0, 1]$ that prioritizes immediate rewards over future rewards.
 
-The goal in an MDP is to find a **policy** $ \pi(a|s) $—a mapping from states to actions—that maximizes the expected cumulative reward, often referred to as the **return**.
+The goal in an MDP is to find a **policy** $\pi(a|s)$—a mapping from states to actions—that maximizes the expected cumulative reward, often referred to as the **return**.
 
 ---
 
@@ -56,17 +56,15 @@ This method is failry easy to implement when the discretization is already deter
 #### 2. **Tabular Q-Learning**
 **Tabular Q-Learning** is a model-free reinforcement learning algorithm that updates a table of Q-values for state-action pairs:
 - **Q-Update Rule:** 
-  $
-  Q(s, a) \leftarrow Q(s, a) + \alpha \left( r + \gamma \max_a Q(s', a) - Q(s, a) \right)
-  $
-  where $ \alpha $ is the learning rate.
+  $$Q(s, a) \leftarrow Q(s, a) + \alpha \left( r + \gamma \max_a Q(s', a) - Q(s, a) \right)$$
+  where $\alpha$ is the learning rate.
 
 SImilarly, this method is failry simple to implement and can output some interesting results. The issue is that for continuous state spaces, it won't work. The $Q$-table would need to have as many dimensions as the number of dimensions of the state space which is not possible (and not logical).
 
 #### 3. **Neural Fitted Q-Iteration (NFQ)**
 **NFQ** extends Q-learning to continuous state-action spaces using neural networks:
-- **Key Idea:** Use a neural network to approximate the Q-function $ Q(s, a) $.
-- **Training:** Batch updates with tuples $ (s, a, r, s') $ collected over multiple episodes.
+- **Key Idea:** Use a neural network to approximate the Q-function $Q(s, a)$.
+- **Training:** Batch updates with tuples $(s, a, r, s')$ collected over multiple episodes.
 
 This offline method allows us to get very interesting results on simple environments with only a few training iterations. It is limited by the complexity of the enviornments and its stochasticity. It can be pretty computationally intensive too, and the choice of hyperparameters is very important for a successful exeperiment.
 
@@ -75,18 +73,14 @@ This offline method allows us to get very interesting results on simple environm
 - **Experience Replay:** Store and reuse past transitions to break correlations in data.
 - **Target Networks:** Stabilize training by using a fixed target Q-network for updates.
 - **Key Equation:**
-  $
-  Q_{\theta}(s, a) \leftarrow r + \gamma \max_a Q_{\theta'}(s', a)
-  $
+  $$Q_{\theta}(s, a) \leftarrow r + \gamma \max_a Q_{\theta'}(s', a)$$
 
 This online method is the most common one in T.A.S (tool assisted speedrun) for example. It works with two networks, a main $Q$-network and a target $Q$-network that provides the "label" for the estimation of the $Q$ function, deriving the value directly from the Bellman equation. It is not as fast as the NFQ algorithm but scales very well to large state spaces and complex environments. Similarly though, it will need a very good hyperparameter setup.
 
 #### 5. **Direct Policy Optimization**
-**Direct Policy Optimization** methods optimize a parameterized policy $ \pi_\theta(a|s) $ directly:
+**Direct Policy Optimization** methods optimize a parameterized policy $\pi_\theta(a|s)$ directly:
 - **Objective Function:** Maximize the expected cumulative reward:
-  $
-  J(\theta) = \mathbb{E}\left[\sum_t \gamma^t R(s_t, a_t) \right]
-  $
+  $$J(\theta) = \mathbb{E}\left[\sum_t \gamma^t R(s_t, a_t) \right]$$
 - **Approaches:** Include Policy Gradient Methods (e.g., REINFORCE, PPO, TRPO).
 - **Advantages:** Effective in high-dimensional or continuous action spaces.
 - **Challenges:** High variance in gradient estimates and reliance on stable optimization techniques.

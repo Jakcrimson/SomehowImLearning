@@ -70,10 +70,10 @@ class ActorCriticAgent:
 
         # Metrics dict
         self.metrics = {
-            "episode_rewards": [], # Changed from episode_rewards for clearer per-episode tracking
+            "episode_rewards": [], 
             "actor_loss": [],
             "critic_loss": [],
-            "actions_sum_in_episode": [] # Renamed from 'actions' for clarity
+            "actions_sum_in_episode": [] 
         }
 
     def select_action(self, state):
@@ -228,15 +228,13 @@ class ActorCriticAgent:
         ax4.grid(alpha=0.5)
 
         # Adjust layout
-        plt.tight_layout(rect=[0, 0, 1, 0.95]) # Adjust rect to make space for suptitle
+        plt.tight_layout(rect=[0, 0, 1, 0.95]) 
         
-        # Ensure results directory exists
-        plot_dir = "./results" # Changed from ./results to ./plots
+        plot_dir = "./results" 
         os.makedirs(plot_dir, exist_ok=True)
         save_path = os.path.join(plot_dir, f"actor_critic_{env_name}_{nb_ep}_ep_metrics_plot.png")
         
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        # plt.show() # Comment out if running in a non-interactive environment
         print(f"Metric plot saved to {save_path}")
 
 

@@ -12,9 +12,6 @@ from tqdm import tqdm, trange
 import json
 import seaborn as sns
 
-"""THIS IS AN ONLINE ALGORITHM
-
-"""
 
 class DQNAgent:
     def __init__(self, env, gamma=0.99, lr=0.001, hidden_layers=(64, 64), batch_size=64, buffer_capacity=1000000, target_update_freq=5):
@@ -192,5 +189,4 @@ if __name__ == "__main__":
     agent = DQNAgent(env, gamma=0.99, lr=0.001, hidden_layers=(5, 5), batch_size=64)
     agent.train(episodes=nb_episodes, max_steps=env.max_steps)
     agent.save_model(f"./models/dqn_{env_name}_{nb_episodes}_ep.pth")
-    # agent.save_metrics(agent.metrics, f"./results/{env_name}_{nb_episodes}_ep_metrics.json")
     agent.plot_training(env_name=env_name, nb_ep=nb_episodes)

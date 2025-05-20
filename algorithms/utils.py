@@ -2,7 +2,6 @@ import torch.nn as nn
 import random
 from collections import deque
 
-# Define the Neural Network for Q-function approximation
 class QNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_layers=(64, 64)):
         super(QNetwork, self).__init__()

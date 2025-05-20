@@ -22,7 +22,7 @@ class PolicyNetwork(nn.Module):
             layers.append(nn.ReLU())
             input_dim = hidden_dim
         layers.append(nn.Linear(input_dim, action_dim))
-        layers.append(nn.Softmax(dim=-1))  # Output probabilities for actions
+        layers.append(nn.Softmax(dim=-1))  
         self.model = nn.Sequential(*layers)
 
     def forward(self, state):

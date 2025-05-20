@@ -8,7 +8,6 @@ from algorithms.environments.inverted_pendulus import PendulumEnvironment
 from algorithms.environments.car_hill import CarHillEnvironment
 import sys
 
-# Define the Q-Network for PyTorch models
 class QNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_layers=(5, 5)):
         super(QNetwork, self).__init__()
@@ -34,11 +33,9 @@ class NFQAgentWrapper:
         self.env = env
 
         if model_path.endswith(".pkl"):
-            # Load scikit-learn model
             self.model_type = "pkl"
             self.model = load(model_path)
         elif model_path.endswith(".pth"):
-            # Reconstruct PyTorch model and load the state_dict
             self.model_type = "pth"
             self.model = QNetwork(state_dim=2, action_dim=len(self.actions), hidden_layers=(5, 5))
             self.model.load_state_dict(torch.load(model_path))
@@ -59,7 +56,6 @@ class NFQAgentWrapper:
             elif self.model_type == "pth":
                 state_tensor = torch.FloatTensor(state).unsqueeze(0)
                 with torch.no_grad():
-                    # print(f"index | action : {self.actions.index(action)}|{action}")
                     action_index = self.actions.index(action)  # Map action to index
                     q_values.append(self.model(state_tensor).squeeze().numpy()[action_index])        
         return self.actions[np.argmax(q_values)]

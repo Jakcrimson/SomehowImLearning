@@ -4,13 +4,10 @@ import numpy as np
 import torch
 import sys
 from torch import nn
-# Assuming these are your environment files
 from algorithms.environments.inverted_pendulus import PendulumEnvironment
 from algorithms.environments.car_hill import CarHillEnvironment
-# Assuming your visualization classes are in here
-from q_learning_simulation_env import PendulumVisualizationWithMetrics, CarVisualization # Adjusted import
+from q_learning_simulation_env import PendulumVisualizationWithMetrics, CarVisualization
 
-# Define the REINFORCE Policy Network (already provided)
 class PolicyNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_layers):
         super(PolicyNetwork, self).__init__()
@@ -31,7 +28,6 @@ class REINFORCEAgentWrapper:
     def __init__(self, model_path, state_dim, action_dim, hidden_layers, env_actions_map=None):
         self.policy_network = PolicyNetwork(state_dim, action_dim, hidden_layers)
         
-        # Construct the full path
         full_model_path = f"./models/{model_path}"
         print(f"Loading REINFORCE model from: {full_model_path}")
         
@@ -39,7 +35,6 @@ class REINFORCEAgentWrapper:
         self.policy_network.load_state_dict(checkpoint['network_state_dict'])
         self.policy_network.eval()
         
-        # self.actions maps indices to actual environment actions if provided
         if env_actions_map:
             self.actions = env_actions_map
         else:
@@ -50,16 +45,15 @@ class REINFORCEAgentWrapper:
         state_tensor = torch.FloatTensor(state).unsqueeze(0)
         action_probs = self.policy_network(state_tensor).squeeze().detach().numpy()
         
-        # Ensure probabilities sum to 1 (can sometimes have tiny floating point errors)
         action_probs = action_probs / np.sum(action_probs)
 
         if deterministic:
             action_index = np.argmax(action_probs)
         else:
             action_index = np.random.choice(len(self.actions), p=action_probs)
-        return self.actions[action_index] # Return the actual action value
+        return self.actions[action_index] 
     
-    def greedy_action(self, state): # Consistent with select_action(deterministic=True)
+    def greedy_action(self, state): 
         return self.select_action(state, deterministic=True)
 
 # --- Actor-Critic Components ---
@@ -79,7 +73,7 @@ class ActorNetwork(nn.Module):
     def forward(self, state):
         return self.model(state)
 
-class CriticNetwork(nn.Module): # Critic is not strictly needed for inference but often loaded
+class CriticNetwork(nn.Module):
     def __init__(self, state_dim, hidden_layers):
         super(CriticNetwork, self).__init__()
         layers = []
@@ -88,7 +82,7 @@ class CriticNetwork(nn.Module): # Critic is not strictly needed for inference bu
             layers.append(nn.Linear(input_dim, hidden_dim))
             layers.append(nn.ReLU())
             input_dim = hidden_dim
-        layers.append(nn.Linear(input_dim, 1))  # Output a single state value
+        layers.append(nn.Linear(input_dim, 1))  
         self.model = nn.Sequential(*layers)
 
     def forward(self, state):
@@ -97,12 +91,11 @@ class CriticNetwork(nn.Module): # Critic is not strictly needed for inference bu
 class ActorCriticAgentWrapper:
     def __init__(self, model_path, state_dim, action_dim, hidden_layers_actor, hidden_layers_critic, env_actions_map=None):
         self.actor = ActorNetwork(state_dim, action_dim, hidden_layers_actor)
-        self.critic = CriticNetwork(state_dim, hidden_layers_critic) # Initialize critic
+        self.critic = CriticNetwork(state_dim, hidden_layers_critic)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.actor.to(self.device)
         self.critic.to(self.device)
 
-        # self.actions maps indices to actual environment actions if provided
         if env_actions_map:
             self.actions = env_actions_map
         else:
@@ -120,17 +113,14 @@ class ActorCriticAgentWrapper:
         if 'actor_state_dict' in checkpoint:
             self.actor.load_state_dict(checkpoint['actor_state_dict'])
         else:
-            # Fallback for older/different save formats, assuming the main dict is the actor
-            # Or raise an error if strict format is expected
             print("Warning: 'actor_state_dict' not found in checkpoint. Trying to load 'network_state_dict' or root for actor.")
             if 'network_state_dict' in checkpoint:
                  self.actor.load_state_dict(checkpoint['network_state_dict'])
             else:
-                 self.actor.load_state_dict(checkpoint) # If the whole checkpoint is just the actor's state_dict
+                 self.actor.load_state_dict(checkpoint) 
 
         self.actor.eval()
 
-        # Critic loading is optional for inference but good practice if saved
         if 'critic_state_dict' in checkpoint:
             self.critic.load_state_dict(checkpoint['critic_state_dict'])
             self.critic.eval()
@@ -144,7 +134,6 @@ class ActorCriticAgentWrapper:
             action_probs = self.actor(state_tensor)
         
         action_probs_np = action_probs.cpu().squeeze().numpy()
-        # Ensure probabilities sum to 1
         action_probs_np = action_probs_np / np.sum(action_probs_np)
 
         if deterministic:
@@ -152,7 +141,7 @@ class ActorCriticAgentWrapper:
         else:
             action_index = np.random.choice(len(self.actions), p=action_probs_np)
         
-        return self.actions[action_index] # Return the actual action value
+        return self.actions[action_index] 
 
     def greedy_action(self, state): # Consistent with select_action(deterministic=True)
         return self.select_action(state, deterministic=True)
@@ -166,14 +155,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     env_name = sys.argv[1]
-    model_filename = sys.argv[2]  # This is just the filename, e.g., "my_model.pth"
-    agent_method = sys.argv[3] # Changed from ppo_method for clarity
+    model_filename = sys.argv[2] 
+    agent_method = sys.argv[3] 
     simulation_time = int(sys.argv[4])
     
     agent = None
     viz = None
 
-    # Default hidden layers, can be customized if needed
     hidden_layers_config = (64, 64)
     hidden_layers_actor_config = (64, 64)
     hidden_layers_critic_config = (64, 64)
@@ -181,8 +169,8 @@ if __name__ == "__main__":
     if env_name == "pendulum":
         env = PendulumEnvironment()
         state_dim = env.state_dim
-        action_dim = len(env.actions) # Number of discrete actions
-        env_actions_map = env.actions # Actual action values, e.g. [-5, 0, 5]
+        action_dim = len(env.actions) 
+        env_actions_map = env.actions 
 
         if agent_method == "reinforce":
             agent = REINFORCEAgentWrapper(model_filename, state_dim, action_dim, 
